@@ -13,7 +13,8 @@ import sklearn.metrics
 import time
 from math import radians, atan, tan, sin, acos, cos
 import math
-
+import os
+import seaborn as sns
 
 def get_score(d):
     # count the final score
@@ -86,17 +87,7 @@ def add_workday(path):
     someset.to_csv(path)
 
 
-def cut(path, percentage = 0.01, num = 20):
-    # cut file into pieces by percentile, every part have 'percentage' percentage of data, 'num' parts
-    data = pd.read_csv(path, header=0)
-    print('数据规模', data.shape)
-    x = int(data.shape[0] * percentage)
-    for i in range(num):
-        someset = data.iloc[x*i:x*i+x, :]
-        someset.to_csv('./data/train_'+str(i)+'.csv')
-
-
-def cut_2(path):
+def cut(path):
     # cut dataset by id
     data = pd.read_csv(path, header=0)
     id = ''
@@ -112,6 +103,34 @@ def cut_2(path):
             id = data.loc[i, 'out_id']
             start = i
             n = 1
+
+
+def draw_some_pic(n, path):
+    # draw pic by n
+    if n == 1:
+        # draw data sets' size
+        size = pd.read_csv(path, header=0).iloc[:,1:]
+        print(size.shape)
+        sns.distplot(size, color="b", bins=100)
+        sns.distplot(size, hist=False)
+        # sns.kdeplot(size, shade=True)
+        plt.savefig('./pic/sets_size.jpg')
+        plt.show()
+    if n == 2:
+        print('hehe')
+
+
+def get_all_size(path):
+    # path is csv files' directory, and it will count how much rows they have
+    size = []
+    list = os.listdir(path)
+    for file in range(0, len(list)):
+        filepath = os.path.join(path, list[file])
+        if os.path.isfile(filepath):
+            data = pd.read_csv(filepath, header=0)
+            size.append(data.shape[0])
+    size = pd.DataFrame(np.array(size), columns=['data_size'])
+    size.to_csv('./data_size')
 
 
 class NBclassifier():
@@ -155,27 +174,19 @@ class NBclassifier():
 
 path_1 = './data/4A23256745CBA3B0.csv'
 path_2 = './data/2016061820000b.csv'
+
 # path = './train_new.csv'
-data = pd.read_csv(path_1, header=0)
+# data = pd.read_csv(path_2, header=0)
+# print('data shape is :',data.shape)
 
-# 粗略查看
-# print(type(data))
-# print(data.head(10))
-print('data shape is :',data.shape)
 # add_workday(path)
-# cut_2(path)
+
+draw_some_pic(1, './pic/data_size')
 
 
-# print(data.loc[0, :])
-# a = 10/0
 
-# cut data to 20 pieces and add some other info
-# add_time(path)
-# cut(path, 0.01, 20)
-# for i in range(20):
-#     path = './data/train_'+str(i)+'.csv'
-#     add_workday(path)
 
+a = 10/0
 # 初步用贝叶斯进行train的部分集进行训练
 nb = NBclassifier()
 n_1 = 10000
