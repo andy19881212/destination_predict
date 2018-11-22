@@ -12,6 +12,16 @@ from sklearn.externals import joblib
 import sklearn.metrics
 import time
 from math import radians, atan, tan, sin, acos, cos
+import math
+
+
+def get_score(d):
+    # count the final score
+    sum = 0
+    for i in d:
+        i = 1/(1 + math.exp(-(i - 1000)/250))
+        sum = sum + i
+    return sum/d.__len__()
 
 
 def get_distance(latA, lonA, latB, lonB):
@@ -77,13 +87,31 @@ def add_workday(path):
 
 
 def cut(path, percentage = 0.01, num = 20):
-    # cut file into pieces, every part have 'percentage' percentage of data, 'num' parts
+    # cut file into pieces by percentile, every part have 'percentage' percentage of data, 'num' parts
     data = pd.read_csv(path, header=0)
     print('数据规模', data.shape)
     x = int(data.shape[0] * percentage)
     for i in range(num):
         someset = data.iloc[x*i:x*i+x, :]
         someset.to_csv('./data/train_'+str(i)+'.csv')
+
+
+def cut_2(path):
+    # cut dataset by id
+    data = pd.read_csv(path, header=0)
+    id = ''
+    start = 0
+    n = 0
+    for i in range(data.shape[0]):
+        if id == data.loc[i, 'out_id']:
+            n += 1
+        else:
+            if id != '':
+                new_set = data.iloc[start:start+n, 1:]
+                new_set.to_csv('./data/' + str(id) + '.csv')
+            id = data.loc[i, 'out_id']
+            start = i
+            n = 1
 
 
 class NBclassifier():
@@ -125,17 +153,21 @@ class NBclassifier():
         return table, pre
 
 
-
-
-# path = './data/train_new.csv'
-path = './data/train_0.csv'
-data = pd.read_csv(path, header=0)
+path_1 = './data/4A23256745CBA3B0.csv'
+path_2 = './data/2016061820000b.csv'
+# path = './train_new.csv'
+data = pd.read_csv(path_1, header=0)
 
 # 粗略查看
 # print(type(data))
 # print(data.head(10))
 print('data shape is :',data.shape)
+# add_workday(path)
+# cut_2(path)
+
+
 # print(data.loc[0, :])
+# a = 10/0
 
 # cut data to 20 pieces and add some other info
 # add_time(path)
@@ -148,10 +180,15 @@ print('data shape is :',data.shape)
 nb = NBclassifier()
 n_1 = 10000
 n_2 = 10000
-x = data.loc[0:80,['week', 'hour', 'start_lat', 'start_lon']]
-lat = data.loc[0:80,'end_lat']
-x_pre = data.loc[81:127,['week', 'hour', 'start_lat', 'start_lon']]
-table = data.loc[81:127,'end_lat']
+
+train_size = int(1/4 * data.shape[0])
+test_size = data.shape[0] - train_size
+
+
+x = data.loc[0:train_size,['week', 'hour', 'start_lat', 'start_lon']]
+lat = data.loc[0:train_size,'end_lat']
+x_pre = data.loc[train_size + 1:train_size + test_size, ['week', 'hour', 'start_lat', 'start_lon']]
+table = data.loc[train_size + 1:train_size + test_size, 'end_lat']
 
 # table must be int
 table = np.array(table)
